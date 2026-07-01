@@ -1168,7 +1168,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #cd6bff;
+  background: #44258f;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -2439,11 +2439,14 @@ ul.breadcrumb li + li:last-child {
 .links-of-blogroll-item {
   padding: 0;
 }
-.header {
-/* 添加渐变和背景图片 */
-  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%), url("/images/banner.jpg");
+.site-brand-container {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 100%), url("/images/banner.jpg");
   background-position: center;
   background-size: cover;
-/* 调整顶部区域的高度，你可以根据需要修改这个数值 */
-  height: 600px;
+  padding: 40px 20px !important;
+}
+.site-title,
+.site-subtitle {
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
+  color: #fff !important;
 }
