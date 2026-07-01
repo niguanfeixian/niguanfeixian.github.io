@@ -1168,7 +1168,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #ffffaf;
+  background: #0b08ff;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -2444,7 +2444,7 @@ body {
   background-image: none !important;
 }
 .content-wrap {
-  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #fff 85%), url("/images/banner.jpg") no-repeat top center, #fff !important;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0px, rgba(255,255,255,0.1) 200px, #fff 360px, #fff 321px), url("/images/banner.jpg") no-repeat top center, #fff !important;
   background-size: 100% auto, 100% auto, auto !important;
   padding-top: 380px !important;
 }
