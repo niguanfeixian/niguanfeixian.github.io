@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="RK3855介绍RK3588 是瑞芯微（Rockchip）推出的一款旗舰级级 AIoT（智能物联网）芯片。基于它打造的开发板（如香橙派 Orange Pi 5 Plus、讯为 RK3588、Firefly ROC-RK3588S 等），凭借极其强悍的性能和丰富的接口，被开发者们称为“微型服务器”或“ARM 性能怪兽”。  CPU、GPU、NPU三者的区别是什么？  CPU（中央处理器）：全能的“大">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RK3588部署流程">
+<meta property="og:url" content="http://example.com/2026/11/03/RK3588%E9%83%A8%E7%BD%B2%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="RK3855介绍RK3588 是瑞芯微（Rockchip）推出的一款旗舰级级 AIoT（智能物联网）芯片。基于它打造的开发板（如香橙派 Orange Pi 5 Plus、讯为 RK3588、Firefly ROC-RK3588S 等），凭借极其强悍的性能和丰富的接口，被开发者们称为“微型服务器”或“ARM 性能怪兽”。  CPU、GPU、NPU三者的区别是什么？  CPU（中央处理器）：全能的“大">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="d:\blog\source\images\image-20260602095640810.png">
+<meta property="og:image" content="d:\blog\source\images\image-20260602110824172.png">
+<meta property="og:image" content="d:\blog\source\images\image-20260602111105664.png">
+<meta property="og:image" content="d:\blog\source\images\image-20260602112754025.png">
+<meta property="og:image" content="d:\blog\source\images\image-20260602112900385.png">
+<meta property="og:image" content="d:\blog\source\images\image-20260602140533118.png">
+<meta property="article:published_time" content="2026-11-03T08:22:56.000Z">
+<meta property="article:modified_time" content="2026-11-03T09:16:28.698Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="d:\blog\source\images\image-20260602095640810.png">
+
+<link rel="canonical" href="http://example.com/2026/11/03/RK3588%E9%83%A8%E7%BD%B2%E6%B5%81%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>RK3588部署流程 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/11/03/RK3588%E9%83%A8%E7%BD%B2%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RK3588部署流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2026-11-03 16:22:56 / 修改时间：17:16:28" itemprop="dateCreated datePublished" datetime="2026-11-03T16:22:56+08:00">2026-11-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%BE%B9%E7%BC%98%E7%AB%AF%E9%83%A8%E7%BD%B2/" itemprop="url" rel="index"><span itemprop="name">边缘端部署</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="RK3855介绍"><a href="#RK3855介绍" class="headerlink" title="RK3855介绍"></a>RK3855介绍</h2><p><strong>RK3588</strong> 是瑞芯微（Rockchip）推出的一款旗舰级级 AIoT（智能物联网）芯片。基于它打造的开发板（如香橙派 Orange Pi 5 Plus、讯为 RK3588、Firefly ROC-RK3588S 等），凭借极其强悍的性能和丰富的接口，被开发者们称为“微型服务器”或“ARM 性能怪兽”。</p>
+<p><img src="D:\blog\source\images\image-20260602095640810.png" alt="image-20260602095640810"></p>
+<p><strong>CPU、GPU、NPU三者的区别是什么？</strong></p>
+<ol>
+<li>CPU（中央处理器）：全能的“大班长”</li>
+</ol>
+<ul>
+<li><strong>特点：</strong> <strong>少而精，擅长复杂逻辑。</strong></li>
+<li><strong>原理：</strong> CPU 的核心数量很少（通常只有几个到十几个），但每个核心的实力都极其强悍。它配备了大量的控制单元和缓存，能够处理极度复杂的条件判断（如果……就……否则……）和突发任务。它是整台设备的“大脑”和总调度官。</li>
+</ul>
+<ol start="2">
+<li>GPU（图形处理器）：暴力的“人海战术”</li>
+</ol>
+<ul>
+<li><strong>特点：</strong> <strong>多而简单，擅长并行计算。</strong></li>
+<li><strong>原理：</strong> GPU 拥有成百上千甚至上万个微型核心。虽然每个核心的单独算力远不如 CPU 强大，甚至只能做简单的加减乘除，但它们可以<strong>同时开工</strong>。这种为了同时处理海量简单数据的结构，被称为“并行计算”。</li>
+</ul>
+<ol start="3">
+<li>NPU（网络处理器 &#x2F; AI 芯片）：纯粹的“偏科天才”</li>
+</ol>
+<ul>
+<li><strong>特点：</strong> <strong>专机专用，专门为了“矩阵乘法”而生。</strong></li>
+<li><strong>原理：</strong> NPU 抛弃了 CPU 复杂的逻辑控制，也抛弃了 GPU 复杂的图像渲染管线。它的硬件电路是专门为了深度学习中的<strong>卷积、矩阵乘法和激活函数</strong>量身定制的。数据像流水一样经过它固定的计算阵列，就能以极低的功耗、极快的速度完成 AI 推理。</li>
+</ul>
+<p>在 RK3588 上运行一个实际的 AI 项目，例如：用摄像头实时检测进出房间的人脸时，这三者绝不是单打独斗，而是高度协同的流水线：</p>
+<p><strong>[摄像头输入] ──&gt; (CPU: 抓取与缩放) ──&gt; (NPU: 特征提取&#x2F;人脸识别) ──&gt; (GPU: 渲染框与UI) ──&gt; [显示器输出]</strong></p>
+<ol>
+<li>RK3588 的 CPU（4×A76 + 4×A55）在做什么？</li>
+</ol>
+<ul>
+<li><strong>作用：</strong> <strong>主导全局、数据前后处理。</strong></li>
+<li>操作系统（如 Ubuntu）本身就跑在 CPU 上。当摄像头拍到画面时，CPU 负责把图像数据抓取进来，进行解码、裁剪、缩放（前处理），然后下达命令给 NPU：“数据准备好了，你来算人脸特征”。当 NPU 算完后，CPU 还要负责业务逻辑（比如：判断这个人是不是白名单里的员工，是的话就发送信号控制警报器或开门）。</li>
+</ul>
+<ol start="2">
+<li>RK3588 的 NPU（3核共 6 TOPS）在做什么？</li>
+</ol>
+<ul>
+<li><strong>作用：</strong> <strong>纯粹的 AI 模型推理加速。</strong></li>
+<li>它是你跑 <code>yolov5.rknn</code> 或人脸识别网络时的<strong>核心发动机</strong>。CPU 传过来的图像数据，进入 NPU 后，被瞬间塞进 6 TOPS 算力的矩阵计算阵列中。原本如果用 CPU 跑需要 200 毫秒的面部特征提取，NPU 只需要几毫秒就能搞定，并且功耗极低，芯片不会发烫。</li>
+</ul>
+<ol start="3">
+<li>RK3588 的 GPU（Mali-G610）在做什么？</li>
+</ol>
+<ul>
+<li><strong>作用：</strong> <strong>界面渲染与图形输出。</strong></li>
+<li>当 NPU 识别出人脸并给出坐标后，GPU 负责把人脸周围的“绿色瞄准框”、文字标签以及系统的 GUI 界面，流畅地绘制并刷新在显示器上。如果你需要同时输出到两块屏幕，或者播放 4K&#x2F;8K 视频，GPU 就会在幕后负责这些像素级的图形渲染工作。</li>
+</ul>
+<h2 id="RKNN工具链"><a href="#RKNN工具链" class="headerlink" title="RKNN工具链"></a>RKNN工具链</h2><p>要使用 RKNN-NPU，用户需要先在计算机上运行 RKNN-Toolkit2 工具，将训练好的模型转换为 RKNN 格式模型，然后使用 RKNN C API或 Python API 在开发板上进行推理。 </p>
+<ul>
+<li><strong>RKNN-Toolkit2</strong> 是一个软件开发工具包，用于在 PC(Liunx系统上) 和 Rockchip NPU 平台上进行模型转换、推理和性能评估。 </li>
+<li><strong>RKNN-Toolkit-Lite2</strong> 为 Rockchip NPU 平台提供 <strong>Python 编程接口</strong>，帮助用户部署 RKNN 模型并加速 AI 应用的实现。  </li>
+<li><strong>RKNN Runtime</strong> 为 Rockchip NPU 平台提供 <strong>C&#x2F;C++ 编程接口</strong>，帮助用户部署 RKNN 模型并加速 AI 应用的实现。 </li>
+<li>RKNPU 内核驱动程序负责与 NPU 硬件进行交互。该驱动程序已开源，可在 Rockchip 内核代码中找到。</li>
+</ul>
+<h3 id="RKNN软件栈"><a href="#RKNN软件栈" class="headerlink" title="RKNN软件栈"></a>RKNN软件栈</h3><p>RKNN软件栈可以帮助用户快速的将AI模型部署到Rockchip芯片。整体的框架如下：</p>
+<p><img src="D:\blog\source\images\image-20260602110824172.png" alt="image-20260602110824172"></p>
+<p>为了使用RKNPU，用户需要首先在计算机上运行RKNN-Toolkit2工具，将训练好的模型转换为RKNN格式模型，之后使用RKNN C API或Python API在开发板上进行部署。</p>
+<h3 id="RKNN-Toolkit2"><a href="#RKNN-Toolkit2" class="headerlink" title="RKNN-Toolkit2"></a>RKNN-Toolkit2</h3><p>RKNN-Toolkit2是为用户提供在计算机上进行模型转换、推理和性能评估的开发套件，RKNN-Toolkit2的主要框图如下：</p>
+<p><img src="D:\blog\source\images\image-20260602111105664.png" alt="image-20260602111105664"></p>
+<p>通过该工具提供的Python接口可以便捷地完成以下功能：</p>
+<ol>
+<li>模型转换：支持将PyTorch、ONNX、TensorFlow、TensorFlow Lite、Caffe、DarkNet等模型转为RKNN模型。</li>
+<li>量化功能：支持将浮点模型量化为定点模型，并支持混合量化。</li>
+<li>模型推理：将RKNN模型分发到指定的NPU设备上进行推理并获取推理结果(RKNN-Toolkit-Lite2)；或在计算机上仿真NPU运行RKNN型并获取推理结果。</li>
+<li>性能和内存评估：将RKNN模型分发到指定NPU设备上运行，以评估模型在实际设备上运行时的性能和内存占用情况。</li>
+<li>量化精度分析：该功能将给出模型量化后每一层推理结果与浮点模型推理结果的余弦距离和欧氏距离，以便于分析量化误差是如何出现的，为提高量化模型的精度提供思路。</li>
+<li>模型加密功能：使用指定的加密等级将RKNN模型整体加密。</li>
+</ol>
+<h3 id="RKNN-Runtime"><a href="#RKNN-Runtime" class="headerlink" title="RKNN Runtime"></a>RKNN Runtime</h3><p>RKNN Runtime负责加载RKNN模型，并调用NPU驱动实现在NPU上推理RKNN模型。推理RKNN模型时，包括原始数据输入预处理、NPU运行模型、输出后处理三项流程。根据不同模型输入格式和量化方式，RKNN Runtime提供通用API和零拷贝API两种处理流程。</p>
+<p>通用API推理：提供一套简洁、无门槛的推理API，易于使用，流程如下图所示。其中对数据的归一化、量化、数据排布格式转换、反量化等均在CPU上运行，模型本身的推理在NPU上运行。</p>
+<p><img src="D:\blog\source\images\image-20260602112754025.png" alt="image-20260602112754025"></p>
+<p>零拷贝API推理：流程如下图所示。优化了通用API的数据处理流程，归一化、量化和模型推理都会在NPU上运行，NPU输出的数据排布格式和反量化过程在CPU或者NPU上运行。零拷贝API对于输入数据流程的处理效率会比通用API高。支持数据在不同的IP核之间流动，没有数据拷贝，减少CPU及DDR带宽消耗。比如通过camera或者解码出来的数据，支持零拷贝导入到NPU中使用。</p>
+<p><img src="D:\blog\source\images\image-20260602112900385.png" alt="image-20260602112900385"></p>
+<h3 id="RKNN开发流程"><a href="#RKNN开发流程" class="headerlink" title="RKNN开发流程"></a>RKNN开发流程</h3><p>RKNN的开发流程主要包括3部分：<strong>模型转换、模型评估和板端部署</strong></p>
+<p><img src="D:\blog\source\images\image-20260602140533118.png" alt="image-20260602140533118"></p>
+<p>1.模型转换：</p>
+<p>原始的深度学习模型会被转化为RKNN格式，以便在RKNPU平台上进行高效的推理。这一阶段包括以下5个步骤：<br>a. 获取原始模型：获取或训练深度学习模型，建议使用主流框架，如ONNX、PyTorch或TensorFlow。<br>b. 模型配置：在RKNN-Toolkit2中进行必要的配置，如归一化参数、量化参数和目标平台等。<br>c. 模型加载：使用适当的加载接口将模型导入RKNN-Toolkit2，根据模型框架选择正确的加载接口。<br>d. 模型构建：通过rknn.build() 接口构建RKNN模型，可选择是否进行量化，提高模型在硬件上推理的性能。<br>e. 模型导出：通过rknn.export_rknn() 接口将RKNN模型导出成一个文件（.rknn 格式），用于后续部署。</p>
+<p>2.模型评估：</p>
+<p>该阶段的主要目标是评估模型推理结果的准确性、推理性能和内存占用等关键指标。评估的主要步骤如下：<br>a. 模型连板调试：使用Python连接RKNPU平台对模型进行推理并验证结果准确性。这个阶段涵盖了输入数据的前处理和输出结果的后处理，以确保模型在板上运行正确。<br>b. 精度评估：通过rknn.accuracy_analysis() 接口，比较量化模型与浮点模型推理结果之间的差异，以分析量化误差的来源。<br>c. 性能评估：通过rknn.eval_perf() 接口，分析模型在RKNPU平台上的推理性能，帮助用户进一步优化模型结构，加快推理性能。<br>d. 内存评估：通过rknn.eval_memory() 接口，了解模型在RKNPU平台上的内存使用情况，帮助用户进一步优化模型结构，最小化内存占用。</p>
+<p>3.板端部署：</p>
+<p>这个阶段涵盖了模型的实际部署和运行。它通常包括以下步骤：<br>a. 模型初始化：加载RKNN模型到RKNPU平台，准备进行前处理。<br>b. 模型前处理：加载待推理数据到RKNPU平台，准备进行推理。<br>c. 模型推理：执行推理操作，将输入数据传递给模型并获取推理结果。<br>d. 模型后处理：获取推理结果进行后处理，后处理结果传给应用端。<br>e. 模型释放：在完成推理流程后，释放模型资源，以便其他任务使用RKNN模型。</p>
+<h2 id="参考文献："><a href="#参考文献：" class="headerlink" title="参考文献："></a>参考文献：</h2><p>[1] 官方文件：<a target="_blank" rel="noopener" href="https://github.com/airockchip/rknn-toolkit2/tree/v2.3.2">rknn-toolkit2-master&#x2F;doc&#x2F;02_Rockchip_RKNPU_User_Guide_RKNN_SDK_V2.3.2_CN.pdf</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/06/19/%E4%BB%80%E4%B9%88%E6%98%AF%E6%99%BA%E8%83%BD%E4%BD%93%EF%BC%9F/" rel="prev" title="什么是智能体？">
+      <i class="fa fa-chevron-left"></i> 什么是智能体？
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#RK3855%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">RK3855介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RKNN%E5%B7%A5%E5%85%B7%E9%93%BE"><span class="nav-number">2.</span> <span class="nav-text">RKNN工具链</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RKNN%E8%BD%AF%E4%BB%B6%E6%A0%88"><span class="nav-number">2.1.</span> <span class="nav-text">RKNN软件栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RKNN-Toolkit2"><span class="nav-number">2.2.</span> <span class="nav-text">RKNN-Toolkit2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RKNN-Runtime"><span class="nav-number">2.3.</span> <span class="nav-text">RKNN Runtime</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RKNN%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B"><span class="nav-number">2.4.</span> <span class="nav-text">RKNN开发流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE%EF%BC%9A"><span class="nav-number">3.</span> <span class="nav-text">参考文献：</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
