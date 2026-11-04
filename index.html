@@ -150,6 +150,158 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://niguanfeixian.github.io/2026/11/04/NVIDIA-Jetson-AGX-Orin-%E7%AE%97%E6%B3%95%E9%83%A8%E7%BD%B2%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/11/04/NVIDIA-Jetson-AGX-Orin-%E7%AE%97%E6%B3%95%E9%83%A8%E7%BD%B2%E6%B5%81%E7%A8%8B/" class="post-title-link" itemprop="url">NVIDIA Jetson AGX Orin 算法部署流程</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2026-11-04 14:46:30 / 修改时间：15:52:28" itemprop="dateCreated datePublished" datetime="2026-11-04T14:46:30+08:00">2026-11-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%BE%B9%E7%BC%98%E7%AB%AF%E9%83%A8%E7%BD%B2/" itemprop="url" rel="index"><span itemprop="name">边缘端部署</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="一、Jetson-AGX-Orin"><a href="#一、Jetson-AGX-Orin" class="headerlink" title="一、Jetson AGX Orin"></a>一、Jetson AGX Orin</h2><h3 id="1-1、介绍"><a href="#1-1、介绍" class="headerlink" title="1.1、介绍"></a>1.1、介绍</h3><p><strong>Jetson AGX Orin</strong> 是 NVIDIA Jetson 边缘计算家族中的旗舰级产品（Top-tier Flagship），专为对实时性要求极高、计算复杂度极大、需要处理多路高分辨率传感器数据的边缘 AI 场景（如高阶自动驾驶、复杂机器人控制、无人机三维建图、边缘端多模态&#x2F;大模型推理）而设计。如果说 Orin 架构是一套高性能引擎，那么 Jetson AGX Orin 则是将这套架构发挥到极致的“性能怪兽”。</p>
+<p>![NVIDAI Jetson AGX Orin_1](&#x2F;images&#x2F;NVIDAI Jetson AGX Orin_1.jpg)</p>
+<p>![NVIDAI Jetson AGX Orin_2](&#x2F;images&#x2F;NVIDAI Jetson AGX Orin_2.jpg)</p>
+<h3 id="1-2、-核心优势"><a href="#1-2、-核心优势" class="headerlink" title="1.2、 核心优势"></a>1.2、 核心优势</h3><ol>
+<li>真正的“零拷贝”（Zero-Copy）统一内存架构</li>
+</ol>
+<p>AGX Orin 的 CPU、GPU 以及硬件解码器共享高带宽的 LPDDR5 统一内存。在进行多路图像&#x2F;点云处理时，从摄像头读取数据、解码、上传到 GPU 推理、再到渲染输出，全程无需在 CPU RAM 和 GPU 显存之间进行繁重的内存拷贝，大大降低了端到端延迟。</p>
+<ol start="2">
+<li>双 DLA 与 GPU 异构并行计算</li>
+</ol>
+<p>AGX Orin 拥有 2 个独立的 DLA（Deep Learning Accelerator）引擎。在实际部署中，你可以把主干目标检测模型（如 YOLO）扔给 GPU 运行，而把辅助模型（如车道线识别、人脸关键点检测）剥离给 DLA。这样可以在不占用 GPU 算力的前提下，实现多模型并行高效运行。</p>
+<ol start="3">
+<li>支持复杂的“传感器融合”与大模型</li>
+</ol>
+<p>凭借 64GB 的大内存与 275 TOPS 算力，AGX Orin 不仅能轻松应对多路 1080p 视频的目标检测与追踪，还能够直接在本地跑通激光雷达（LiDAR）与可见光相机的 3D 点云传感器融合建图、实时 SLAM 导航，甚至能在边缘端本地部署百亿参数级别的微型大语言模型（LLM）与 VLM 视觉大模型。</p>
+<h2 id="二、TensorRT"><a href="#二、TensorRT" class="headerlink" title="二、TensorRT"></a>二、TensorRT</h2><p>TensorRT 是 NVIDIA 推出的一个高性能深度学习推理优化器和运行时引擎。它专门针对 NVIDIA 的 GPU（如你手中的 Jetson AGX Orin 或桌面显卡）进行极致的底层优化，让训练好的神经网络模型在部署时跑得更快、吞吐更高、延迟更低。</p>
+<p>在工程实践中，TensorRT 能够成倍提升推理性能，主要依靠以下四大核心技术：</p>
+<ol>
+<li>算子融合（Layer Fusion）</li>
+</ol>
+<ul>
+<li><strong>原理</strong>：在深度学习框架中（如 PyTorch），像 <code>Conv（卷积） + BatchNorm（归一化） + ReLU（激活函数）</code> 是三个独立的计算层。在前向推理时，数据需要先写入显存、从显存读出做 Conv、再写回显存、再读出来做 BN……这会产生大量的显存带宽浪费（Memory Bound）。</li>
+<li><strong>TensorRT 优化</strong>：TensorRT 会自动扫描计算图，将这些相邻的算子“熔铸”成一个单一的复合内核（Kernel）。数据只需在 GPU 寄存器或片上缓存中流转一次就完成全部计算，大幅减少了显存访存开销。</li>
+</ul>
+<ol start="2">
+<li>精度校准与量化（Precision Calibration &amp; Quantization）</li>
+</ol>
+<ul>
+<li><strong>原理</strong>：深度学习模型在训练时通常使用 FP32（32位单精度浮点数）。但在实际边缘端推理中，绝大多数神经网络并不需要如此高的精度。</li>
+<li><strong>TensorRT 优化</strong>：<ul>
+<li><strong>FP16 半精度</strong>：利用 Orin 等现代 GPU 硬件上专用的 Tensor Cores，FP16 计算速度是 FP32 的数倍，且模型体积减半，精度几乎无损。</li>
+<li><strong>INT8 量化</strong>：将权重和激活值压缩为 8 位整数。TensorRT 提供了强大的熵校准（Entropy Calibration）算法，在几乎不损失模型准确率（mAP）的前提下，将推理吞吐量推向极致，并大幅降低内存占用。</li>
+</ul>
+</li>
+</ul>
+<ol start="3">
+<li>内核自动调优（Kernel Auto-Tuning）</li>
+</ol>
+<ul>
+<li><strong>原理</strong>：针对不同的硬件平台（如 Jetson AGX Orin 的 Ampere GPU 架构与 RTX 3060 Ti），最优的矩阵乘法或卷积实现算法是完全不同的。</li>
+<li><strong>TensorRT 优化</strong>：在将 ONNX 转换为 <code>.engine</code> 文件的编译阶段（这一步通常比较耗时），TensorRT 会针对当前硬件的 CUDA 核心数量、SM（Streaming Multiprocessor）架构、共享内存大小，对模型中的每一个计算层测试几十种不同的底层 CUDA 实现算法，最终挑选出执行速度最快的那一个“最优解”。</li>
+</ul>
+<ol start="4">
+<li>动态显存管理（Dynamic Memory Management）</li>
+</ol>
+<ul>
+<li><strong>原理</strong>：推理过程中，中间张量（Intermediate Tensors）的临时显存分配和释放会带来不小的开销。</li>
+<li><strong>TensorRT 优化</strong>：TensorRT 在编译时会进行全局生命周期分析，精确计算并复用显存空间，确保整个推理流水线中显存占用最小化、碎片化最低。</li>
+</ul>
+<h2 id="三、NVIDIA-JetPack-SDK"><a href="#三、NVIDIA-JetPack-SDK" class="headerlink" title="三、NVIDIA JetPack SDK"></a>三、NVIDIA JetPack SDK</h2><p>NVIDIA JetPack SDK 是 NVIDIA 专为 Jetson 系列边缘计算硬件（如你手中的 Jetson AGX Orin）打造的官方集成软件开发包（Software Development Kit）。如果把 Jetson Orin 硬件比作一台性能强劲的超跑，那么 JetPack 就是让这台超跑能够上路狂飙的整套“汽车操作系统、发动机控制固件以及专业驾驶辅助软件”。</p>
+<p>下面我们同样从通俗比喻和专业理论两个角度来剖析 JetPack 的本质与作用：</p>
+<h3 id="3-1、-通俗角度：把一堆散装零件变成“智能机器人大脑”"><a href="#3-1、-通俗角度：把一堆散装零件变成“智能机器人大脑”" class="headerlink" title="3.1、 通俗角度：把一堆散装零件变成“智能机器人大脑”"></a>3.1、 通俗角度：把一堆散装零件变成“智能机器人大脑”</h3><p>想象一下，你刚买回来的 Jetson AGX Orin 裸板，上面只有密密麻麻的芯片、GPU、CPU 和各种接口。此时它就像一辆刚从工厂下线的赛车，空有一身好力气，却连方向盘和油门都不知道怎么踩——操作系统还没装，GPU 怎么调用也不知道。</p>
+<p>JetPack 的作用，就是把所有这些杂乱的底层硬件和上层 AI 算法完美缝合在一起的一键式“精装修包”：</p>
+<ol>
+<li>铺路架桥（操作系统）：它把深度定制的 Ubuntu 系统装进芯片，让你可以像用普通电脑一样连鼠标、键盘、输命令。</li>
+<li>打通经脉（底层驱动）：它写好了让 CPU、GPU、DLA（深度学习加速器）和摄像头接口协同工作的底层驱动，防止硬件“各自为战”。</li>
+<li>装备武器（AI 工具链）：它把 TensorRT、CUDA 等一整套大杀器直接打包好。你不需要自己去一行行配置复杂的显卡驱动，装上 JetPack，你的硬件就已经具备了运行最前沿 AI 算法的能力。</li>
+</ol>
+<h3 id="3-2、-专业理论角度：全栈式异构计算软件架构"><a href="#3-2、-专业理论角度：全栈式异构计算软件架构" class="headerlink" title="3.2、 专业理论角度：全栈式异构计算软件架构"></a>3.2、 专业理论角度：全栈式异构计算软件架构</h3><p>在工程与理论层面，JetPack 并不是一个单一的软件，而是一个分层、解耦的异构计算软件栈（Software Stack）。它自底向上主要由以下几个核心层级构成：</p>
+<h4 id="3-2-1-操作系统层（L4T-Linux-for-Tegra）"><a href="#3-2-1-操作系统层（L4T-Linux-for-Tegra）" class="headerlink" title="3.2.1. 操作系统层（L4T: Linux for Tegra）"></a>3.2.1. 操作系统层（L4T: Linux for Tegra）</h4><ul>
+<li><strong>理论核心</strong>：基于 Ubuntu LTS（如 JetPack 5 对应 Ubuntu 20.04，JetPack 6 对应 Ubuntu 22.04）深度定制的 Linux 内核。</li>
+<li><strong>工程作用</strong>：针对 Tegra 芯片的电源管理（NVPModel）、热管理（Thermal Management）、PCIe、USB 和硬件 GPIO 进行了底层特化，确保边缘设备在复杂恶劣的工业或车载环境下稳定运行。</li>
+</ul>
+<h4 id="3-2-2-加速计算与驱动层（CUDA-X-Libraries）"><a href="#3-2-2-加速计算与驱动层（CUDA-X-Libraries）" class="headerlink" title="3.2.2. 加速计算与驱动层（CUDA-X &amp; Libraries）"></a>3.2.2. 加速计算与驱动层（CUDA-X &amp; Libraries）</h4><ul>
+<li><strong>理论核心</strong>：<ul>
+<li><strong>CUDA &#x2F; cuDNN</strong>：让开发者能够直接调度 Ampere 架构 GPU 内部的数千个并行核心和 Tensor Cores。</li>
+<li>**VPI (Vision Programming Interface)**：专为传统计算机视觉算法（如几何变换、滤波、光流）设计的硬件加速库，将任务分流给 PVA（可编程视觉加速器）处理。</li>
+</ul>
+</li>
+<li><strong>工程作用</strong>：实现软硬件的极致解耦。算法工程师无需编写复杂的底层汇编或直接操作寄存器，只需调用标准 API 即可榨干硬件算力。</li>
+</ul>
+<h4 id="3-2-3-AI-推理与应用框架层（TensorRT-DeepStream）"><a href="#3-2-3-AI-推理与应用框架层（TensorRT-DeepStream）" class="headerlink" title="3.2.3. AI 推理与应用框架层（TensorRT &amp; DeepStream）"></a>3.2.3. AI 推理与应用框架层（TensorRT &amp; DeepStream）</h4><ul>
+<li><strong>理论核心</strong>：<ul>
+<li><strong>TensorRT</strong>：前文提到的核心推理优化引擎，负责模型的图优化、算子融合与量化。</li>
+<li><strong>DeepStream SDK</strong>：基于 GStreamer 的多路视频流分析框架。它在理论上实现了“零拷贝（Zero-Copy）”流水线——从摄像头采集图像、硬件解码（NVDEC）、TensorRT 推理到最终渲染，数据全程在 GPU 统一内存中流转，彻底消除了传统 CPU-GPU 内存搬运的带宽瓶颈。</li>
+</ul>
+</li>
+</ul>
+<h2 id="四、部署流程"><a href="#四、部署流程" class="headerlink" title="四、部署流程"></a>四、部署流程</h2><p>将模型（以YOLOv11为例）部署到NVIDIA Jetson AGX Orin上，核心流程遵循“PC端训练导出模型 —-&gt; Orin端TensorRT编译 —-&gt; 编写脚本推理”的标准链路。</p>
+<p>第一步、在PC端将模型导出为.onnx格式。</p>
+<p>第二步、在Orin上使用TensorRT将.onnx编译为.engine引擎。比如：YOLOv11模型</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/src/tensorrt/bin/trtexec --onnx=yolo11n.onnx --saveEngine=yolo11n.engine --fp16</span><br></pre></td></tr></table></figure>
+
+<p>观察终端输出日志，确认末尾显示 <code>PASSED</code>，并且同目录下成功生成了 <code>yolo11n.engine</code> 文件</p>
+<p>第三步、编写 Python 脚本加载编译好的 <code>.engine</code> 模型进行高性能推理。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://niguanfeixian.github.io/2026/11/03/RK3588%E9%83%A8%E7%BD%B2%E6%B5%81%E7%A8%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -621,7 +773,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-count">5</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
