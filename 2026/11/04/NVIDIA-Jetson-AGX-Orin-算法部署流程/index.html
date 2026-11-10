@@ -47,7 +47,9 @@
     lang   : 'zh-CN'
   };
 </script>
-
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
   <title>NVIDIA Jetson AGX Orin 算法部署流程 | Hexo</title>
   
 
@@ -271,7 +273,7 @@
 <h4 id="3-2-2-加速计算与驱动层（CUDA-X-Libraries）"><a href="#3-2-2-加速计算与驱动层（CUDA-X-Libraries）" class="headerlink" title="3.2.2. 加速计算与驱动层（CUDA-X &amp; Libraries）"></a>3.2.2. 加速计算与驱动层（CUDA-X &amp; Libraries）</h4><ul>
 <li><strong>理论核心</strong>：<ul>
 <li><strong>CUDA &#x2F; cuDNN</strong>：让开发者能够直接调度 Ampere 架构 GPU 内部的数千个并行核心和 Tensor Cores。</li>
-<li>**VPI (Vision Programming Interface)**：专为传统计算机视觉算法（如几何变换、滤波、光流）设计的硬件加速库，将任务分流给 PVA（可编程视觉加速器）处理。</li>
+<li><strong>VPI (Vision Programming Interface)</strong>：专为传统计算机视觉算法（如几何变换、滤波、光流）设计的硬件加速库，将任务分流给 PVA（可编程视觉加速器）处理。</li>
 </ul>
 </li>
 <li><strong>工程作用</strong>：实现软硬件的极致解耦。算法工程师无需编写复杂的底层汇编或直接操作寄存器，只需调用标准 API 即可榨干硬件算力。</li>
@@ -308,7 +310,10 @@
     <a href="/2026/11/03/RK3588%E9%83%A8%E7%BD%B2%E6%B5%81%E7%A8%8B/" rel="prev" title="RK3588部署流程">
       <i class="fa fa-chevron-left"></i> RK3588部署流程
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2026/11/06/%E5%9B%9B%E6%97%8B%E7%BF%BC%E6%97%A0%E4%BA%BA%E6%9C%BA%E5%BB%BA%E6%A8%A1%E4%BB%BF%E7%9C%9F%EF%BC%88%E4%B8%80%EF%BC%89/" rel="next" title="四旋翼无人机建模仿真（一）">
+      四旋翼无人机建模仿真（一） <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -381,14 +386,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
@@ -476,6 +481,61 @@
 
 
   
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
 
   
 

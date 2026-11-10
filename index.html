@@ -40,7 +40,9 @@
     lang   : 'zh-CN'
   };
 </script>
-
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
   <title>Hexo</title>
   
 
@@ -146,6 +148,508 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://niguanfeixian.github.io/2026/11/09/%E5%9B%9B%E6%97%8B%E7%BF%BC%E6%97%A0%E4%BA%BA%E6%9C%BA%E5%BB%BA%E6%A8%A1%E4%BB%BF%E7%9C%9F%EF%BC%88%E4%BA%8C%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/11/09/%E5%9B%9B%E6%97%8B%E7%BF%BC%E6%97%A0%E4%BA%BA%E6%9C%BA%E5%BB%BA%E6%A8%A1%E4%BB%BF%E7%9C%9F%EF%BC%88%E4%BA%8C%EF%BC%89/" class="post-title-link" itemprop="url">四旋翼无人机建模仿真（二）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2026-11-09 16:40:22" itemprop="dateCreated datePublished" datetime="2026-11-09T16:40:22+08:00">2026-11-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2026-11-10 14:50:33" itemprop="dateModified" datetime="2026-11-10T14:50:33+08:00">2026-11-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%97%A0%E4%BA%BA%E6%9C%BA/" itemprop="url" rel="index"><span itemprop="name">无人机</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <!-- 手动引入 KaTeX 样式，确保没有主题配置也能生效 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+
+<h2 id="传递函数"><a href="#传递函数" class="headerlink" title="传递函数"></a>传递函数</h2><p>在经典控制理论中，我们习惯用高阶微分方程或传递函数（如单输入单输出的 $G(s)$）来描述系统。但当系统变得极其复杂（多输入多输出、变量之间严重耦合）时，高阶微分方程会变得无比臃肿，难以用计算机进行矩阵运算。</p>
+<p>现代控制理论引入状态空间的核心目的，是通过<strong>变量代换</strong>，将任意复杂的 $n$ 阶微分方程，统一降阶转化为<strong>一阶微分方程组的矩阵形式</strong>。</p>
+<p>理论推导的核心步骤：</p>
+<ol>
+<li><p><strong>选取状态变量</strong>：挑选出一组能够完全表征系统动态特征的最小变量集合（对于四旋翼，通常选位置、速度、角度、角速度共 12 个变量）。</p>
+</li>
+<li><p><strong>列写非线性微分方程</strong>：根据牛顿-欧拉定律，写出包含各种物理耦合项的非线性方程。</p>
+</li>
+<li><p><strong>平衡点线性化</strong>：在特定的工作点（如平稳悬停状态，$\phi \approx 0, \theta \approx 0$）附近，利用泰勒展开略去高阶小量，将非线性方程化为线性差分&#x2F;微分方程。</p>
+</li>
+<li><p><strong>矩阵打包</strong>：将线性化后的方程组用矩阵乘积的形式统一表达，即得到了标准的线性连续系统状态空间表达式：</p>
+ $$\begin{cases} \dot{X} = AX + BU \\ Y = CX + DU \end{cases}$$ </li>
+</ol>
+<p>1.确定状态向量X(12维)：$$X = [\dot{x}, \dot{y}, \dot{z}, \dot{\phi}, \dot{\phi}, \dot{\psi}, x, y, z, \phi, \theta, \psi]^T$$（包含了三个方向的速度、三个方向的姿态角速度、三个方向的位置、三个方向的姿态角）</p>
+<p>2.确定输入向量U(4维)：$$U = [U_1, U_2, U_3, U_4]^T$$（即总升力 $U_1$ 和三个轴的控制力矩 $U_2, U_3, U_4$）</p>
+<p>3.确定输出向量Y(4维)：$$Y = [z, \phi, \theta, \psi]^T$$ （即悬停状态下的飞行高度和三个姿态角）</p>
+<p>根据上面的动力学微分方程，结合小角度近似展开，分别得到简化后的高度、滚转、俯仰和偏航公式</p>
+<p>原本非线性方程为 $m\ddot{z} &#x3D; \cos\phi\cos\theta U_1 - K_{fz}\dot{z} - mg$。在悬停平衡点附近，总升力 $U_1 \approx mg$ 且 $\cos\phi\cos\theta \approx 1$。即$$\ddot{z} = \frac{1} {m}U_1 - \frac{K_{fz} } {m}\dot{z} - g$$</p>
+<p>忽略高阶项 $(I_y - I_z)qr$，得到：$$I_x\ddot{\phi} = U_2 - K_{ {\tau}X}\dot{\phi} \implies \ddot{\phi} = -\frac{K_{ {\tau}X} } {I_x}\dot{\phi} + \frac{1} {I_x}U_2$$</p>
+<p>忽略高阶项 $(I_z-I_x)pr$，得到：$$I_y\ddot{\theta} = U_3 - K_{ { {\tau}Y}}\dot{\theta} \implies \ddot{\theta} = -\frac{K_{ { {\tau}Y} } } {I_y}\dot{\theta} + \frac{1} {I_y}U_3$$</p>
+<p>忽略高阶项 $(I_x - I_y)pq$，得到：$$I_z\ddot{\psi} = U_4 - K_{ { {\tau}Z}}\dot{\psi} \implies \ddot{\psi} = -\frac{K_{ { {\tau}Z} } } {I_z}\dot{\psi} + \frac{1} {I_z}U_4$$</p>
+<p><span style="color: DeepSkyBlue;"> 在现代控制理论中，状态空间表达式（$A, B, C, D$）和传递函数矩阵 $G(s)$ 并不是孤立的，它们可以通过经典的公式严密转换：</span></p>
+$$G(s) = C(sI - A)^{-1}B + D$$
+
+<p><span style="color: DeepSkyBlue;"> 由于在小角度线性化后，四通道（$z, \phi, \theta, \psi$）已经实现解耦，我们可以直接对其时域线性化微分方程逐个施加零初始条件的拉普拉斯变换。</span></p>
+<p><span style="color: DeepSkyBlue;"> 拉普拉斯变换是控制工程和数学中最伟大的“魔法”之一。它的核心价值在于把微积分运算转换成了代数运算。拉普拉斯变换（Laplace Transform）是应用数学中常用的一种积分变换，符号记为$\mathcal{L}{f(t)}$。它能将时间域（t 域）的实变量函数，转换为复频率域（s 域）的复变量函数。</span></p>
+<p><span style="color: DeepSkyBlue;"> 它的数学定义为：$F(s) = \int_{0}^{\infty} f(t) e^{-st} dt$$</span></p>
+<p><span style="color: DeepSkyBlue;">  $s$ 是一个复数，通常写作 $s &#x3D; \sigma + j\omega$（$\sigma$ 代表衰减&#x2F;发散率，$\omega$ 代表旋转频率）。 $e^{-(\sigma + j\omega)t}$代表了一组随时间衰减或增长的正弦&#x2F;指数波， 引入了衰减因子 $e^{-\sigma t}$，使得原本在傅里叶变换下不收敛的信号也能被积分和分析。</span></p>
+<p><span style="color: DeepSkyBlue;"> 拉普拉斯变换的公式是$\mathcal{L}{f(t)} &#x3D; \int_{0}^{\infty} f(t) e^{-st} dt$</span></p>
+<p><span style="color: DeepSkyBlue;"> 对一个函数求导一次 $\dot{f}(t)$，它的拉普拉斯变换是$\mathcal{L}{\dot{f}(t)} &#x3D; \int_{0}^{\infty} \dot{f}(t) e^{-st} dt$</span></p>
+<p><span style="color: DeepSkyBlue;"> 代入分部积分公式$\int_{0}^{\infty} \dot{f}(t) e^{-st} dt = \left[ f(t) e^{-st} \right]_0^\infty - \int_{0}^{\infty} f(t) \left( -s e^{-st} \right) dt$$</span></p>
+<p><span style="color: DeepSkyBlue;"> 得到$\mathcal{L}{\dot{f}(t)} &#x3D; s F(s) - f(0)$</span></p>
+<p><span style="color: DeepSkyBlue;"> 在研究无人机动态响应（比如分析阶跃响应、传递函数）时，我们通常假设系统是从静止状态（零初始条件）开始启动的。也就是说，初始位置 $z(0) &#x3D; 0$，初始速度 $\dot{z}(0) &#x3D; 0$。</span></p>
+<p><span style="color: DeepSkyBlue;"> 既然初始条件全为 0：</span></p>
+<ul>
+<li><span style="color: DeepSkyBlue;"> 一阶导数 $\dot{z}(t)$ 的拉普拉斯变换就是：$s Z(s) - z(0) &#x3D; s Z(s)$</span></li>
+<li><span style="color: DeepSkyBlue;"> 二阶导数 $\ddot{z}(t)$ 连续用两次这个性质，就是：$s^2 Z(s) - s\dot{z}(0) - z(0) &#x3D; s^2 Z(s)$</span></li>
+</ul>
+<p>求解传递函数</p>
+<p><strong>对于高度传递函数$G_z(s)$</strong></p>
+$$m\ddot{z}(t) + K_{fz}\dot{z}(t) = \cos\phi\cos\theta \cdot U_1(t)$$
+
+<p>初始条件为0，$\ddot{z}(t) \rightarrow s^2 Z(s)$，$\dot{z}(t) \rightarrow s Z(s)$，公式两边进行拉普拉斯变换</p>
+$$m s^2 Z(s) + K_{fz} s Z(s) = \cos\phi\cos\theta \cdot U_1(s)$$
+
+<p>整理可得传递函数 $G_z(s) &#x3D; \frac{Z(s) } {U_1(s)}$：</p>
+$$G_z(s) = \frac{\cos\phi\cos\theta} {m s^2 + K_{fz} s} = \frac{\cos\phi\cos\theta} {m s \left(s + \frac{K_{fz} } {m}\right)}$$
+
+<p><strong>对于滚转角传递函数$G_{\phi}(s)$</strong></p>
+$$I_x \ddot{\phi}(t) + K_{ { {\tau}X} }\dot{\phi}(t) = U_2(t)$$
+
+<p>公式两边进行拉普拉斯变换</p>
+$$I_x s^2 \Phi(s) + K_{ { {\tau}X} } s \Phi(s) = U_2(s)$$
+
+$$I_x s \left(s + \frac{K_{{\tau}X}}{I_x}\right) \Phi(s) = U_2(s)$$
+
+<p>整理可得传递函数 $G_{\phi}(s) &#x3D; \frac{\Phi(s) } {U_2(s)}$：</p>
+$$G_{\phi}(s) = \frac{1} {I_x s \left(s + \frac{K_{ {\tau}X} } {I_x}\right)}$$
+
+<p><strong>对于俯仰角传递函数$G_{\theta} (s)$</strong></p>
+ $$I_y \ddot{\theta}(t) + K_{ {\tau}Y}\dot{\theta} (t) = U_3(t)$$
+
+<p>公式两边进行拉普拉斯变换</p>
+$$I_y s^2 \Theta(s) + K_{ { {\tau}Y} } s \Theta(s) = U_3(s)$$
+
+$$I_y s \left(s + \frac{K_{ {\tau}Y} } {I_y}\right) \Theta(s) = U_3(s)$$
+
+<p>整理可得传递函数$$G_{\theta}(s) &#x3D; \frac{\Theta(s) } {U_3(s) } $$</p>
+$$G_{\theta}(s) = \frac{1} {I_y s \left(s + \frac{K_{ {\tau}Y} } {I_y}\right) } $$
+
+<p><strong>对于偏航角传递函数$G_{\psi} (s)$</strong></p>
+ $$I_z \ddot{\psi} (t) + K_{ {\tau}Z}\dot{\Psi}(t) = U_4(t)$$ 
+
+<p>公式两边进行拉普拉斯变换</p>
+$$I_z s^2 \Psi(s) + K_{ { {\tau}Z} } s \Psi(s) = U_4(s)$$
+
+$$I_z s \left(s + \frac{K_{ {\tau}Z} } {I_y}\right) \Psi(s) = U_4(s)$$
+
+<p>整理可得传递函数$$G_{\psi} (s) &#x3D; \frac{\Psi(s) } {U_4(s) } $$</p>
+$$G_{\psi}(s) = \frac{1} {I_z s \left(s + \frac{K_{ {\tau}Z} } {I_z}\right) } $$
+
+<p>又可以写作</p>
+$$G_z(s) = \frac{\cos\phi\cos\theta} {m s^2 + K_{fz} s} = \frac{\cos\phi\cos\theta} {m s \left(s + K_{fz}\right) }$$
+
+$$G_{\phi}(s) = \frac{1} {I_x s \left(s + K_{ {\tau}X}\right) }$$
+
+$$G_{\theta}(s) = \frac{1} {I_y s \left(s + K_{ {\tau}Y}\right) } $$
+
+$$G_{\psi}(s) = \frac{1} {I_z s \left(s + K_{ {\tau} Z}\right)} $$
+
+<p>这四个传递函数形式完全一致，均为 <strong>$\frac{1}{J s (s + a)}$</strong> 型的典型积分加一阶惯性环节。</p>
+<p>以高度通道为例：输入是总升力 $U_1$，输出是高度 $z$。升力通过牛顿第二定律产生加速度，加速度积两次变成高度（双重积分的变体），同时受到垂直空气阻尼 $K_{fz}$ 的制约（一阶惯性）。</p>
+<p>以姿态通道为例：输入是力矩 $U_2&#x2F;U_3&#x2F;U_4$，输出是角度 $\phi&#x2F;\theta&#x2F;\psi$。力矩产生角加速度，角加速度积两次变成角度，同时受到旋转空气阻尼（如 $K_{ {\tau}X }$）的制约</p>
+<p><span style="color: DeepSkyBlue;"><strong>PID控制原理</strong></span></p>
+<p><span style="color: DeepSkyBlue;">P（Proportional，比例控制）——“看眼前的距离踩油门&#x2F;刹车”</span></p>
+<ul>
+<li><p><span style="color: DeepSkyBlue;">原理：你离白线还有多远，就按比例输出多大的动力。离得远，油门踩得大；离得近，油门放轻。</span></p>
+</li>
+<li><p><span style="color: DeepSkyBlue;">现象：如果你只用 P 控制，你会发现快到白线时车速变慢，但由于惯性，你很容易冲过头（超调）；冲过头后你会倒车，结果又倒过头。车会在白线附近来回晃荡，甚至可能一直震荡停不下来。</span></p>
+<p><span style="color: DeepSkyBlue;">作用：决定反应的快慢与力度。</span></p>
+</li>
+</ul>
+<p><span style="color: DeepSkyBlue;">I（Integral，积分控制）——“累积历史误差，消除顽固偏差”</span></p>
+<ul>
+<li><span style="color: DeepSkyBlue;">原理：它会把过去的误差“攒起来”。如果车因为上坡或者风阻，用 P 控制死活差了 5 厘米到不了白线，I 就会随着时间推移，发现“怎么老是差一点点？”，于是不断悄悄加大力度，直到把这最后一点残留误差彻底消灭（消除静差）。</span></li>
+<li><span style="color: DeepSkyBlue;">现象：它像一个有“记性”的助手，专门对付那些持续存在的微小偏差。但如果积分太强，系统容易反应迟钝或产生大超调。</span></li>
+<li><span style="color: DeepSkyBlue;">作用：消除稳态误差，保证绝对精准。</span></li>
+</ul>
+<p><span style="color: DeepSkyBlue;">D（Derivative，微分控制）——“看变化的速度，提前预判刹车”</span></p>
+<ul>
+<li><span style="color: DeepSkyBlue;">原理：它不看你现在离白线有多远，而是看你靠近的速度有多快。如果发现你冲向白线的速度极快，它就会提前用力踩刹车，防止你冲过头。</span></li>
+<li><span style="color: DeepSkyBlue;">现象：它就像一个“预言家”或“阻尼器”，专门给系统踩刹车、增添阻尼，把由于 P 太猛或惯性带来的震荡和超调死死压制住。</span></li>
+<li><span style="color: DeepSkyBlue;">作用：抑制震荡，提供阻尼和稳定性。</span></li>
+</ul>
+<p><span style="color: DeepSkyBlue;">从严格的控制工程理论来看，PID 控制器是一个结合了<strong>比例、积分、微分</strong>三种基本运算的线性控制器。</span></p>
+<p><span style="color: DeepSkyBlue;"><strong>时域连续公式</strong>：</span></p>
+$$u(t) = K_p e(t) + K_i \int_{0}^{t} e(\tau) d\tau + K_d \frac{de(t) } {dt}$$
+
+<p><span style="color: DeepSkyBlue;">其中：</span></p>
+<ul>
+<li><span style="color: DeepSkyBlue;">$e(t)$ 是给定目标值与实际输出值之间的误差（$e &#x3D; 设定值 - 实际值$）。</span></li>
+<li><span style="color: DeepSkyBlue;">$u(t)$ 是控制器的输出（比如发给电机的总升力或力矩指令）。</span></li>
+<li><span style="color: DeepSkyBlue;">$K_p$、$K_i$、$K_d$ 分别为比例、积分、微分增益。</span></li>
+</ul>
+<p><span style="color: DeepSkyBlue;"><strong>复频域（$s$ 域）传递函数</strong>： 对上式取拉普拉斯变换，可得到 PID 控制器的传递函数：</span></p>
+$$G_c(s) = K_p + \frac{K_i} {s} + K_d s = \frac{K_d s^2 + K_p s + K_i} {s}$$
+
+<p><img src="/%5Cimages%5Cimage-20261109145954942.png" alt="image-20261109145954942"></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>上升时间 (Response Speed)</th>
+<th><strong>超调量 (Overshoot)</strong></th>
+<th><strong>调节时间 (Settling Time)</strong></th>
+<th><strong>稳态误差 (Steady-State Error)</strong></th>
+<th><strong>系统稳定性 (Stability)</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$K_p$</td>
+<td>明显减小（变快）</td>
+<td>显著增大（变冲）</td>
+<td>小幅影响</td>
+<td>减小（但不归零）</td>
+<td>过大会导致不稳定</td>
+</tr>
+<tr>
+<td>$K_i$</td>
+<td>小幅减小</td>
+<td>明显增大（变迟钝&#x2F;震荡）</td>
+<td>增大（变慢）</td>
+<td>消除 (归零)</td>
+<td>过大会导致不稳定</td>
+</tr>
+<tr>
+<td>$K_d$</td>
+<td>极小影响</td>
+<td>显著减小（变平稳）</td>
+<td>减小（快收敛）</td>
+<td>无直接影响</td>
+<td>适度增加可增强稳定性</td>
+</tr>
+</tbody></table>
+<p><span style="color: DeepSkyBlue;">在实际工程（或者像论文中那样在 Simulink 里调参）时，这三个参数极少孤立使用，通常遵循以下经典的组合逻辑：</span></p>
+<ol>
+<li><span style="color: DeepSkyBlue;">先调 $K_p$：把 $K_i$ 和 $K_d$ 归零，先单调 $K_p$，让系统反应变快，直到出现轻微的超调和震荡。</span></li>
+<li><span style="color: DeepSkyBlue;">再调 $K_d$：引入 $K_d$ 把刚才 $K_p$ 带来的震荡和超调狠狠压下去，让曲线变得平滑、快速收敛。</span></li>
+<li><span style="color: DeepSkyBlue;">最后调 $K_i$：如果发现系统最后总是差一小截到不了目标（有静差），再缓缓加入一点点 $K_i$，彻底消除静差，同时注意防止引发新的低频晃动。</span></li>
+</ol>
+<h2 id="仿真"><a href="#仿真" class="headerlink" title="仿真"></a>仿真</h2><p>用MATLAB进行仿真实验，参数设置来源于文献[1]</p>
+<p><img src="/%5Cimages%5Cimage-20261109164934583.png" alt="image-20261109164934583"></p>
+<p><img src="/%5Cimages%5Cimage-20261109165016629.png" alt="image-20261109165016629"></p>
+<figure class="highlight matlab"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">%% ========================================================================</span></span><br><span class="line"><span class="comment">% 小型四旋翼无人机建模与解耦 PID 控制仿真</span></span><br><span class="line"><span class="comment">% 论文参考：孟佳东, 赵志刚. 小型四旋翼无人机建模与控制仿真 [J]. 兰州交通大学学报, 2013.</span></span><br><span class="line"><span class="comment">%% ========================================================================</span></span><br><span class="line">clear; clc; close all;</span><br><span class="line"></span><br><span class="line"><span class="comment">%% 1. 系统参数配置 (对应论文 Tab. 1)</span></span><br><span class="line">m = <span class="number">0.75</span>;           <span class="comment">% 质量 (kg)</span></span><br><span class="line">g = <span class="number">9.81</span>;           <span class="comment">% 重力加速度 (m/s^2)</span></span><br><span class="line">L = <span class="number">0.258</span>;          <span class="comment">% 轴距/机臂长度 (m)</span></span><br><span class="line"></span><br><span class="line">Ix = <span class="number">1.9688e-2</span>;     <span class="comment">% X轴转动惯量 (N*m*s^2 / rad) -&gt; 单位即 kg*m^2</span></span><br><span class="line">Iy = <span class="number">1.9688e-2</span>;     <span class="comment">% Y轴转动惯量 (N*m*s^2 / rad)</span></span><br><span class="line">Iz = <span class="number">3.9388e-2</span>;     <span class="comment">% Z轴转动惯量 (N*m*s^2 / rad)</span></span><br><span class="line"></span><br><span class="line">Kfz = <span class="number">0.078</span>;        <span class="comment">% 垂直方向空气阻力系数 (N/m/s)</span></span><br><span class="line">Ktx = <span class="number">0.0059</span>;       <span class="comment">% 滚转阻尼系数 (N*m*s/rad)</span></span><br><span class="line">Kty = <span class="number">0.0059</span>;       <span class="comment">% 俯仰阻尼系数 (N*m*s/rad)</span></span><br><span class="line">Ktz = <span class="number">0.0228</span>;       <span class="comment">% 偏航阻尼系数 (N*m*s/rad)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">%% 2. 建立四通道线性化传递函数 (对应论文公式 14)</span></span><br><span class="line"><span class="comment">% 悬停状态下 cos(phi)*cos(theta) ≈ 1</span></span><br><span class="line">s = tf(<span class="string">&#x27;s&#x27;</span>);</span><br><span class="line"></span><br><span class="line">G_z     = <span class="number">1</span> / (m * s * (s + Kfz));     <span class="comment">% 高度传递函数</span></span><br><span class="line">G_phi   = <span class="number">1</span> / (Ix * s * (s + Ktx));      <span class="comment">% 滚转角传递函数</span></span><br><span class="line">G_theta = <span class="number">1</span> / (Iy * s * (s + Kty));      <span class="comment">% 俯仰角传递函数</span></span><br><span class="line">G_psi   = <span class="number">1</span> / (Iz * s * (s + Ktz));      <span class="comment">% 偏航角传递函数</span></span><br><span class="line"></span><br><span class="line"><span class="comment">%% 3. PID 控制器参数配置 (对应论文 Tab. 2)</span></span><br><span class="line"><span class="comment">% 高度 PID: P=3, I=0.01, D=1</span></span><br><span class="line">C_z     = pid(<span class="number">3</span>, <span class="number">0.01</span>, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">% 滚转角 PID: P=1.5, I=0.01, D=0.1</span></span><br><span class="line">C_phi   = pid(<span class="number">1.5</span>, <span class="number">0.01</span>, <span class="number">0.1</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">% 仰俯角 PID: P=2, I=0.1, D=0.1</span></span><br><span class="line">C_theta = pid(<span class="number">2</span>, <span class="number">0.1</span>, <span class="number">0.1</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">% 偏航角 PID: P=0.9, I=0.03, D=0.1</span></span><br><span class="line">C_psi   = pid(<span class="number">0.9</span>, <span class="number">0.03</span>, <span class="number">0.1</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">%% 4. 构建闭环系统</span></span><br><span class="line">sys_z     = feedback(C_z * G_z, <span class="number">1</span>);</span><br><span class="line">sys_phi   = feedback(C_phi * G_phi, <span class="number">1</span>);</span><br><span class="line">sys_theta = feedback(C_theta * G_theta, <span class="number">1</span>);</span><br><span class="line">sys_psi   = feedback(C_psi * G_psi, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">%% 5. 仿真与绘图 (对应论文 Fig. 4)</span></span><br><span class="line">t = <span class="number">0</span>:<span class="number">0.01</span>:<span class="number">5</span>; <span class="comment">% 仿真时间 0~5秒</span></span><br><span class="line"></span><br><span class="line"><span class="comment">% 计算阶跃响应</span></span><br><span class="line">[y_z, t_z]         = step(sys_z, t);</span><br><span class="line">[y_phi, t_phi]     = step(sys_phi, t);</span><br><span class="line">[y_theta, t_theta] = step(sys_theta, t);</span><br><span class="line">[y_psi, t_psi]     = step(sys_psi, t);</span><br><span class="line"></span><br><span class="line"><span class="comment">% 创建画布</span></span><br><span class="line"><span class="built_in">figure</span>(<span class="string">&#x27;Name&#x27;</span>, <span class="string">&#x27;四旋翼无人机解耦 PID 控制阶跃响应仿真&#x27;</span>, <span class="string">&#x27;Color&#x27;</span>, [<span class="number">1</span> <span class="number">1</span> <span class="number">1</span>]);</span><br><span class="line"></span><br><span class="line"><span class="comment">% (a) 高度阶跃响应</span></span><br><span class="line">subplot(<span class="number">2</span>,<span class="number">2</span>,<span class="number">1</span>);</span><br><span class="line"><span class="built_in">plot</span>(t_z, y_z, <span class="string">&#x27;b-&#x27;</span>, <span class="string">&#x27;LineWidth&#x27;</span>, <span class="number">1.5</span>);</span><br><span class="line">grid on;</span><br><span class="line">xlabel(<span class="string">&#x27;T / s&#x27;</span>); ylabel(<span class="string">&#x27;Height / m&#x27;</span>);</span><br><span class="line">title(<span class="string">&#x27;a 高度 (Height)&#x27;</span>);</span><br><span class="line">ylim([<span class="number">0</span> <span class="number">1.6</span>]);</span><br><span class="line"></span><br><span class="line"><span class="comment">% (b) 滚转角阶跃响应</span></span><br><span class="line">subplot(<span class="number">2</span>,<span class="number">2</span>,<span class="number">2</span>);</span><br><span class="line"><span class="built_in">plot</span>(t_phi, y_phi, <span class="string">&#x27;b-&#x27;</span>, <span class="string">&#x27;LineWidth&#x27;</span>, <span class="number">1.5</span>);</span><br><span class="line">grid on;</span><br><span class="line">xlabel(<span class="string">&#x27;T / s&#x27;</span>); ylabel(<span class="string">&#x27;Roll / rad&#x27;</span>);</span><br><span class="line">title(<span class="string">&#x27;b 滚转角 (Roll)&#x27;</span>);</span><br><span class="line">ylim([<span class="number">0</span> <span class="number">1.6</span>]);</span><br><span class="line"></span><br><span class="line"><span class="comment">% (c) 仰俯角阶跃响应</span></span><br><span class="line">subplot(<span class="number">2</span>,<span class="number">2</span>,<span class="number">3</span>);</span><br><span class="line"><span class="built_in">plot</span>(t_theta, y_theta, <span class="string">&#x27;b-&#x27;</span>, <span class="string">&#x27;LineWidth&#x27;</span>, <span class="number">1.5</span>);</span><br><span class="line">grid on;</span><br><span class="line">xlabel(<span class="string">&#x27;T / s&#x27;</span>); ylabel(<span class="string">&#x27;Pitch / rad&#x27;</span>);</span><br><span class="line">title(<span class="string">&#x27;c 仰俯角 (Pitch)&#x27;</span>);</span><br><span class="line">ylim([<span class="number">0</span> <span class="number">1.6</span>]);</span><br><span class="line"></span><br><span class="line"><span class="comment">% (d) 偏航角阶跃响应</span></span><br><span class="line">subplot(<span class="number">2</span>,<span class="number">2</span>,<span class="number">4</span>);</span><br><span class="line"><span class="built_in">plot</span>(t_psi, y_psi, <span class="string">&#x27;b-&#x27;</span>, <span class="string">&#x27;LineWidth&#x27;</span>, <span class="number">1.5</span>);</span><br><span class="line">grid on;</span><br><span class="line">xlabel(<span class="string">&#x27;T / s&#x27;</span>); ylabel(<span class="string">&#x27;Yaw / rad&#x27;</span>);</span><br><span class="line">title(<span class="string">&#x27;d 偏航角 (Yaw)&#x27;</span>);</span><br><span class="line">ylim([<span class="number">0</span> <span class="number">1.6</span>]);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/%5Cimages%5CPID_Sim_2.png" alt="PID_Sim_2"></p>
+<p><strong>a. 高度 (Height) —— 响应迟缓，调节时间长</strong></p>
+<ul>
+<li>超调量：峰值约为 $1.4\text{ m}$（目标阶跃指令为 $1.0\text{ m}$），超调量约为 $40%$，偏大。</li>
+<li>动态性能：响应速度较慢，在前 $1.5\text{ 秒}$ 达到峰值后，经历了一个较大范围的下凹（谷值约 $0.88\text{ m}$ 发生在 $3\text{ 秒}$ 左右），直到接近 $4.5\sim 5\text{ 秒}$ 时才勉强稳定在 $1.0\text{ m}$ 附近。</li>
+<li>评价：高度通道的阻尼不足、动态耦合较大，调节时间过长，震荡收敛慢。</li>
+</ul>
+<p><strong>b. 滚转角 (Roll) —— 响应较快，过渡平稳</strong></p>
+<ul>
+<li>超调量：峰值约为 $1.46\text{ rad}$（目标为 $1.0\text{ rad}$），超调量约 $46%$。</li>
+<li>动态性能：在 $0.3\text{ 秒}$ 左右快速到达第一个峰值，经过 $2$ 到 $3$ 个周期的衰减震荡后，大约在 $1.5\sim 2.0\text{ 秒}$ 迅速趋于平稳，最终无稳态误差。</li>
+<li>评价：响应敏捷，虽然初期超调略高，但整体收敛速度快，控制效果尚可。</li>
+</ul>
+<p><strong>c. 仰俯角 (Pitch) —— 动态品质相对较好</strong></p>
+<ul>
+<li>超调量：峰值约 $1.5\text{ rad}$（超调量约 $50%$）。</li>
+<li>动态性能：响应速度极快（约 $0.25\text{ 秒}$ 达峰），震荡衰减速度比高度和偏航更快，在大约 $1.5\text{ 秒}$ 内基本完成过渡并稳定在 $1.0\text{ rad}$。</li>
+<li>评价：内环姿态角的响应速度快，阻尼比滚转和偏航略好，控制收敛干净。</li>
+</ul>
+<p><strong>d. 偏航角 (Yaw) —— 动态响应偏慢，调节周期长</strong></p>
+<ul>
+<li>超调量：峰值约 $1.5\text{ rad}$（超调量约 $50%$）。</li>
+<li>动态性能：上升较慢（约 $0.6\text{ 秒}$ 达峰），且之后的震荡衰减周期较长，历经近 $3.5\sim 4\text{ 秒}$ 才最终稳定。</li>
+<li>评价：偏航通道的惯性较大或控制增益匹配不够理想，导致调节时间偏长。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文主要根据《四旋翼无人机建模仿真（一）》推导出的四旋翼无人机动力学模型，得出了传递函数，在Matlab平台上对悬停模式的高度和姿态做了PID四通道解耦控制仿真。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1] 孟佳东,赵志刚.小型四旋翼无人机建模与控制仿真[J].兰州交通大学学报,2013,32(1):63-67.</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://niguanfeixian.github.io/2026/11/06/%E5%9B%9B%E6%97%8B%E7%BF%BC%E6%97%A0%E4%BA%BA%E6%9C%BA%E5%BB%BA%E6%A8%A1%E4%BB%BF%E7%9C%9F%EF%BC%88%E4%B8%80%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/11/06/%E5%9B%9B%E6%97%8B%E7%BF%BC%E6%97%A0%E4%BA%BA%E6%9C%BA%E5%BB%BA%E6%A8%A1%E4%BB%BF%E7%9C%9F%EF%BC%88%E4%B8%80%EF%BC%89/" class="post-title-link" itemprop="url">四旋翼无人机建模仿真（一）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2026-11-06 16:01:41" itemprop="dateCreated datePublished" datetime="2026-11-06T16:01:41+08:00">2026-11-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2026-11-10 14:26:12" itemprop="dateModified" datetime="2026-11-10T14:26:12+08:00">2026-11-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%97%A0%E4%BA%BA%E6%9C%BA/" itemprop="url" rel="index"><span itemprop="name">无人机</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <!-- 手动引入 KaTeX 样式，确保没有主题配置也能生效 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+
+
+
+<h2 id="一、小型四旋翼无人机飞行原理"><a href="#一、小型四旋翼无人机飞行原理" class="headerlink" title="一、小型四旋翼无人机飞行原理"></a>一、小型四旋翼无人机飞行原理</h2><p>小型四旋翼无人机在平面结构上其呈十字对称均匀分布，其四只旋翼（旋翼１、２、３、４）分别位于十字架结构的前后左右四个端点上，分为前后、左右两组，且飞行时两组旋翼的旋转方向正好相反：一组逆时针转动（１，３），另一组顺时针转动（２，４）．四旋翼飞行器的结构简图如图所示。</p>
+<p><img src="/%5Cimages%5Cimage-20261028105945919.png" alt="image-20261028105945919"></p>
+<p>由于小型四旋翼无人机特殊的结构，使其仅通过调整旋翼的转速，使无人机的４个顶点受力不同，从而改变飞行姿态．其各种姿态控制如下：悬停状态时，四只旋翼转速相同，且其升力之和等于无人机自身重力；垂直上升或下降时、保持四只旋翼转速相同且同时等量增加或等量下降；仰俯或滚转运动时，保持一组旋翼转速不变，另一组旋翼中一只旋翼转速增加、另一只旋翼等量下降（仰俯时２、４保持不变，１<br>增加，３降低；１、３保持不变，４增加，２降低）；偏航运动时一组旋翼转速增加，同时另一组转速下降。</p>
+<h2 id="二、小型四旋翼无人机动力学分析及数学建模"><a href="#二、小型四旋翼无人机动力学分析及数学建模" class="headerlink" title="二、小型四旋翼无人机动力学分析及数学建模"></a>二、小型四旋翼无人机动力学分析及数学建模</h2><p>假设条件：</p>
+<p>（1）视小型四旋翼无人机整体为刚体，且完全均匀对称；</p>
+<p>（2）机体坐标原点与无人机的质心完全重合；</p>
+<p>（3）无人机的螺旋桨为刚体，不考虑其结构和弹性形变。</p>
+<p>（4）假设地面坐标系E为惯性坐标系。</p>
+<h3 id="线速度和角速度"><a href="#线速度和角速度" class="headerlink" title="线速度和角速度"></a>线速度和角速度</h3><p><span style="color: DeepSkyBlue;">举例：</span></p>
+<p><span style="color: DeepSkyBlue;">想象一下，你和好朋友一起去游乐园坐旋转木马。</span></p>
+<ul>
+<li><span style="color: DeepSkyBlue;">你坐在紧靠边缘的木马上，</span></li>
+<li><span style="color: DeepSkyBlue;">你的朋友坐在靠近中心轴的木马上。</span></li>
+</ul>
+<p><span style="color: DeepSkyBlue;">当木马转动起来时，你们俩的感受会完全不同：</span></p>
+<ol>
+<li><span style="color: DeepSkyBlue;">转得快慢的感受（角速度）：你们俩转圈的节奏是一样的——木马转过一圈时，你们俩也同时转过一圈。在同一秒内，你们转过的“角度”是完全相同的。</span></li>
+<li><span style="color: DeepSkyBlue;">迎面风速的感受（线速度）：如果你坐在边缘，你会觉得风呼呼地吹过，景物飞速倒退；而坐在中心的朋友，感觉相对平稳得多。因为在同样的时间里，你在外圈画了一个很大的圆，跑过的路程要比在内圈的朋友长得多！</span></li>
+</ol>
+<h4 id="角速度（-omega-）——-描述转动快慢"><a href="#角速度（-omega-）——-描述转动快慢" class="headerlink" title="角速度（$\omega$）—— 描述转动快慢"></a><span style="color: DeepSkyBlue;">角速度（$\omega$）—— 描述转动快慢</span></h4><ul>
+<li><p><span style="color: DeepSkyBlue;"><strong>通俗理解</strong>：单位时间内物体转过的角度。也就是“一秒钟转了多少度（或者多少弧度）”。</span></p>
+</li>
+<li><p><span style="color: DeepSkyBlue;"><strong>理论定义</strong>：半径转过的角度 $\Delta \theta$ 与所用时间 $\Delta t$ 的比值。</span></p>
+</li>
+<li><p><span style="color: DeepSkyBlue;"><strong>核心公式</strong>：</span></p>
+<p>$$\omega &#x3D; \frac{\Delta \theta}{\Delta t}$$</p>
+</li>
+<li><p><span style="color: DeepSkyBlue;"><strong>单位</strong>：弧度每秒 ($\text{rad&#x2F;s}$)。</span></p>
+</li>
+<li><p><span style="color: DeepSkyBlue;"><strong>特点</strong>：在刚体（如整个旋转木马、转盘）做同轴转动时，上面所有点的角速度都是完全相同的。</span></p>
+</li>
+</ul>
+<h4 id="线速度（-v-）——-描述空间位移快慢"><a href="#线速度（-v-）——-描述空间位移快慢" class="headerlink" title=" 线速度（$v$）—— 描述空间位移快慢"></a><span style="color: DeepSkyBlue;"> 线速度（$v$）—— 描述空间位移快慢</span></h4><ul>
+<li><p><span style="color: DeepSkyBlue;"><strong>通俗理解</strong>：如果把圆周运动的轨迹“拉直”成一条直线，物体沿这条直线跑的速度就是线速度。它是一个矢量，方向永远沿着圆周的切线方向。</span></p>
+</li>
+<li><p><span style="color: DeepSkyBlue;"><strong>理论定义</strong>：质点通过的弧长 $\Delta s$ 与所用时间 $\Delta t$ 的比值。</span></p>
+</li>
+<li><p><span style="color: DeepSkyBlue;"><strong>核心公式</strong>：</span></p>
+<p>$$v &#x3D; \frac{\Delta s}{\Delta t}$$</p>
+</li>
+<li><p><span style="color: DeepSkyBlue;"><strong>单位</strong>：米每秒 ($\text{m&#x2F;s}$)。</span></p>
+</li>
+<li><p><span style="color: DeepSkyBlue;"><strong>特点</strong>：离转动中心越远（半径 $r$ 越大），相同的角速度下，跑的弧长就越长，因此线速度就越大。</span></p>
+</li>
+</ul>
+<p><span style="color: DeepSkyBlue;">既然角速度描述“转得快慢”，线速度描述“跑得有多快”，它们之间究竟有什么数学关系呢？</span></p>
+<p><span style="color: DeepSkyBlue;">根据圆弧长公式 $\Delta s &#x3D; r \cdot \Delta \theta$，我们代入线速度的定义：</span></p>
+<p>$$v &#x3D; \frac{\Delta s}{\Delta t} &#x3D; \frac{r \cdot \Delta \theta}{\Delta t} &#x3D; r \cdot \left(\frac{\Delta \theta}{\Delta t}\right)$$</p>
+<p><span style="color: DeepSkyBlue;">因为 $\omega &#x3D; \frac{\Delta \theta}{\Delta t}$，所以我们得到了一个极其重要的核心公式：</span></p>
+<p>$$v &#x3D; \omega r$$</p>
+<p><strong>问题一：四旋翼无人机的螺旋桨的转速指的是角速度么？</strong></p>
+<p>在工程实践中，我们常说电机或螺旋桨的转速是 $n$ (单位：转&#x2F;分钟，RPM)。而在物理学和控制算法中，我们通常将其转化为角速度 $\omega$ (单位：弧度&#x2F;秒，$\text{rad&#x2F;s}$)。</p>
+<p>它们之间的数学换算非常简单：$$\omega &#x3D; \frac{2\pi n}{60}$$</p>
+<p>所以，无论是无人机飞控固件（如 PX4&#x2F;ArduPilot）底层代码里计算姿态控制，还是在动力学建模中，所谓的“转速指令”本质上就是给电机设定的角速度。</p>
+<h3 id="动力学分析"><a href="#动力学分析" class="headerlink" title="动力学分析"></a>动力学分析</h3><p><strong>问题二：如何理解在进行无人机姿态仿真或研究无人机动力学原理的时候会“假设地面坐标系E为惯性坐标系”？</strong></p>
+<p>从经典力学的绝对严格定义来看，惯性坐标系要求坐标系本身处于静止或匀速直线运动状态，不转动也不加速。但我们身处的地面坐标系实际上附着在地球上，而地球存在两种运动：绕地轴自转和绕太阳公转。如果以宇宙中真正绝对静止的惯性系来看，地面坐标系是一个旋转的非惯性系。这意味着，严格在地面系中应用牛顿定律时，必须引入两种惯性力（或称虚拟力）：惯性离心力和科里奥利力。在绝大多数中小型无人机（如四旋翼、固定翼）的飞行工况下，地球自转产生的虚拟力与无人机自身的动力学加速度相比，小到完全可以忽略不计。如果不能把地面系当作惯性系，动力学建模的复杂度会呈指数级上升。</p>
+<ol>
+<li>地面导航坐标系（$N$系，North-East-Down）：<ul>
+<li>$X$ 轴指向正北方 ($N$)</li>
+<li>$Y$ 轴指向正东方 ($E$)</li>
+<li>$Z$ 轴指向地心向下 ($D$)</li>
+<li><em>这是一个被我们假设为惯性系的绝对参考舞台。</em></li>
+</ul>
+</li>
+<li>机体坐标系（$B$系，Body Frame）：<ul>
+<li>原点在无人机质心。</li>
+<li>$X_b$ 轴指向机头前方。</li>
+<li>$Y_b$ 轴指向机身右侧。</li>
+<li>$Z_b$ 轴指向机腹下方。</li>
+<li><em>这个坐标系死死固定在无人机上，跟着它一起翻滚、俯仰。</em></li>
+</ul>
+</li>
+</ol>
+<p>我们的目标是：如果我知道一个向量在机体坐标系下的数值（比如传感器测出来的加速度、或者螺旋桨产生的推力方向），怎样通过一个数学矩阵，把它精准转换到地面导航坐标系下？这个矩阵记作 $C_b^n$（表示从 Body 到 Navigation 的转换矩阵）。</p>
+<p>标准的机体坐标系到地面系方向余弦矩阵 $C_b^n$(<span style="color: yellow;">具体的推导会单独写一篇博客，这里直接引用</span>)：</p>
+ $C_b^n = \begin{bmatrix} \cos\theta\cos\psi & \sin\phi\sin\theta\cos\psi - \cos\phi\sin\psi & \cos\phi\sin\theta\cos\psi + \sin\phi\sin\psi \\ \cos\theta\sin\psi & \sin\phi\sin\theta\sin\psi + \cos\phi\cos\psi & \cos\phi\sin\theta\sin\psi - \sin\phi\cos\psi \\ -\sin\theta & \sin\phi\cos\theta & \cos\phi\cos\theta \end{bmatrix}$ 
+
+<p><em>(注：式中 $\phi$ 为横滚 Roll，$\theta$ 为俯仰 Pitch，$\psi$ 为偏航 Yaw)</em>    <strong>此处省略了它的推导</strong>。</p>
+<p><strong>问题三：好多论文中z轴方向是向上的？</strong></p>
+<p><img src="/%5Cimages%5Ccoord_system_right_hand.png" alt="coord_system_right_hand"></p>
+<p>在三维空间中，绝大多数学术论文、数学推导和三维引擎（如 OpenGL、ROS、MATLAB）都严格遵循右手笛卡尔坐标系。</p>
+<p>在这个体系中，大拇指、食指和中指分别代表 $X、Y、Z$ 轴：</p>
+<ol>
+<li>当你确定了 $X$ 轴的方向（如图中机体坐标系 $B$ 的 $x$ 指向右侧）。   </li>
+<li>当你由于直观需要，把 $Z$ 轴设定为向上（因为人类对高度的直觉就是“往上为正”）。   </li>
+<li>此时，为了满足数学上严格的叉乘关系（即 $X \text{轴} \times Y\text{轴} &#x3D; Z\text{轴}$），你的 $Y$ 轴就别无选择，必须指向左边。</li>
+</ol>
+<p>如果 $Y$ 轴敢指向右边，整个坐标系就会变成“左手系”，这会导致矩阵变换、叉乘运算和旋转四元数的数学公式全部出现符号错误。</p>
+<p><img src="/%5Cimages%5Cimage-20261103151011620.png" alt="image-20261103151011620"></p>
+<p>结合空气动力学和螺旋桨知识可将螺旋桨的推力Ｔ、空气阻力ｆ、螺旋桨的转矩Ｍ 和阻力矩τ分别表示为</p>
+ $\begin{cases} T=K_T\Omega^2 \\ f=K_f\dot{S} \\ M=K_M\Omega^2 \\  \tau=K_{\tau}\dot{ζ} \end{cases}$ 
+
+<p>其中：$Ｋ_T$表示螺旋桨推力系数；Ω 表示螺旋桨的转速；$Ｋ_f$表示空气阻力系数；$\dot{S}$ 表示线速度；$Ｋ_M$表示螺旋桨的转矩系数；$Ｋ_{\tau}$表示空气的阻力矩系数；$\dot{ζ}$表示角速度。</p>
+<p>根据受力分析可得到机体坐标系下无人机整体升力$\mathbf{F}_B$为</p>
+ $\begin{cases} \mathbf{F}_B=[F_x, F_y, F_z]^T=[0, 0, U_1]^T \\ U_1=\sum\limits^4_{i=1}T_i \\ T_i=K_T{\Omega}_i^2\end{cases}$ 
+
+<p>其中：ｉ表示表示相应的旋翼。</p>
+<p>**空间位置运动学与动力学（平动方程），描述无人机在惯性坐标系下的空间三维位置(x,y,z)变化。**利用坐标转换矩阵将$\mathbf{F}_B$转换到地面坐标系下，得到$\mathbf{F}_E$</p>
+ $\mathbf{F}_E=[F_X, F_Y, F_Z]^T=C_b^n\mathbf{F}_B=\begin{bmatrix} (cos{\phi}sin{\theta}cos{\psi}+sin{\phi}sin{\psi})U_1 \\ (cos{\phi}sin{\theta}cos{\psi}-sin{\phi}sin{\psi})U_1 \\ cos{\phi}cos{\theta}U_1 \end{bmatrix}$  
+
+<p>在地面坐标系下，无人机所受的干扰力和重力可表示为</p>
+ $\begin{cases} \mathbf{f_E}=\begin {bmatrix}f_X \ f_Y \ f_Z \end{bmatrix} = \begin {bmatrix}K_{fX}\dot{x} \\ K_{fY}\dot{y} \\ K_{fZ}\dot{z} \end{bmatrix} \\ \mathbf{G}_E=[0 \ 0 \ mg] \end{cases}$ 
+
+<p>在地面坐标下，根据牛顿第二定理$F&#x3D;ma$</p>
+<p>$m[\ddot{x} \ \ddot{y}\ \ddot{z}]^T &#x3D; \mathbf{F}_E-\mathbf{f}_E-\mathbf{G}_E$</p>
+<p>绕三个轴的力矩平衡方程：</p>
+$\begin{cases} I_x \dot{p} = U_2 + (I_y - I_z)qr - \tau_x \\  I_y \dot{q} = U_3 + (I_z - I_x)pr - \tau_y \\  I_z \dot{r} = U_4 + (I_x - I_y)pq - \tau_z \end{cases}$ 
+
+<p>其中：$Ｉ_x$、$Ｉ_y$、$Ｉ_z$分别表示机体绕三轴的转动惯性；ｐ、ｑ、ｒ分别表示无人机相对于机体坐标系的旋转角速度；${\tau}_x$、${\tau}_y$、${\tau}_z$分别表示空气对无人机在三轴方向上的阻力矩。这三行分别对应无人机的三个旋转方向：<strong>滚转轴（Roll）、俯仰轴（Pitch）和偏航轴（Yaw）</strong>。</p>
+<p>以第一行（滚转轴方程）为例：<strong>我要让无人机滚转加速（$I_x \dot{p}$），取决于三个因素：我自己用电机制造的力矩（$U_2$） 减去空气的阻力（$\tau_x$），再加上由于多轴同时旋转带来的物理干扰（$(I_y - I_z)qr$）。</strong></p>
+<ul>
+<li>$I_x \dot{p}$</li>
+</ul>
+<p><strong>$I_x$</strong>：就是我们刚学过的<strong>转动惯量</strong>（绕 $x$ 轴的“旋转懒惰度”）。</p>
+<p><strong>$\dot{p}$</strong>：是<strong>滚转角加速度</strong>（代表滚转速度变化的快慢，也就是越转越快的加速度）。</p>
+<p>$I_x \dot{p}$ 的物理意义：<strong>“懒惰程度 $\times$ 加速度”</strong>。这跟牛顿第二定律里的 $m \cdot a$ 简直一模一样！它代表了为了让无人机改变当前的旋转状态，你必须要克服的惯性阻力。</p>
+<ul>
+<li>$U_2$</li>
+</ul>
+<p><strong>$U_2$</strong>：是四个螺旋桨通过差动（左边转得慢、右边转得快）人为制造出来的<strong>滚转控制力矩</strong></p>
+<ul>
+<li>$(I_y - I_z)qr$</li>
+</ul>
+<p>$q$ 和 $r$分别是俯仰和偏航方向的转速。当无人机在空中极其灵活地同时进行几个方向的旋转时（比如既在向左倾斜，又在抬头或转头），旋转的物理规律会导致不同轴之间产生互相“拉扯”的附加力矩。</p>
+<ul>
+<li>$\tau_x$</li>
+</ul>
+<p><strong>$\tau_x$</strong>：代表空气对旋转的黏滞阻力矩。</p>
+<p>三个姿态控制力矩$U_2, U_3, U_4$</p>
+$\begin{cases} U_2 = (T_4 - T_2)L \\  U_3 = (T_3 - T_1)L \\  U_4 = K_M (\Omega_1^2 + \Omega_3^2 - \Omega_2^2 - \Omega_4^2) \end{cases}$ 
+
+<p>其中：Ｌ 是旋翼中心到机体重心之间的距离。</p>
+<p>机体坐标系下的角速度$[p,q,r]^T$与地面坐标下的角速度$[\dot{\phi}, \dot{\theta}, \dot{\psi}]^T$之间关系为(<span style="color: yellow;">具体的推导会单独写一篇博客，这里直接引用</span>)</p>
+ $\begin{bmatrix}p \\ q \\ r \end{bmatrix} = \begin{pmatrix} 1 & 0 & -sin{\theta} \\ 0 & cos{\phi} & sin{\phi}cos{\theta} \\ 0 & -sin{\phi} & cos{\phi}cos{\theta} \\ \end{pmatrix} \begin{bmatrix} \dot{\phi} \\ \dot{\theta} \\ \dot{\psi} \end{bmatrix}$ 
+
+<p>在小角度情况下，$[p,q,r]^T$可近似为$[\dot{\phi}, \dot{\theta}, \dot{\psi}]^T$，即：</p>
+<p>$[p,q,r]^T&#x3D;[\dot{\phi}, \dot{\theta}, \dot{\psi}]^T$</p>
+<p>因此，<strong>机体角速度动力学（转动方程），描述机体坐标系下的三轴角速度(p,q,r)如何在控制力矩和惯性耦合下变化</strong>。地面坐标系下的角加速度为</p>
+ $\begin{cases} \ddot{\phi} = [U_2+(I_y-I_z)\dot{\theta}\dot{\psi}-K_{{\tau}X}\dot{\phi}]/I_x \\  \ddot{\theta} = [U_3+(I_z-I_x)\dot{\phi}\dot{\psi}-K_{{\tau}Y}\dot{\theta}]/I_y \\ \ddot{\psi} = [U_4+(I_x-I_y)\dot{\phi}\dot{\theta}-K_{{\tau}Z}\dot{\psi}]/I_z \end{cases}$ 
+
+<p><strong>在该动力学模型中$(\ddot{x},\dot{y},\ddot{z},\ddot{\phi},\ddot{\theta},\ddot{\psi})$是关于变量的数学表达式，即表示无人机的位姿变化是由四个旋翼的转速来控制的。</strong></p>
+ $ \begin{cases} \ddot{x}=[(cos{\phi}sin{\theta}cos{\psi}+sin{\phi}sin{\psi})U_1-K_{fX}\dot{x}]/m \\ \ddot{y}=[(cos{\phi}sin{\theta}cos{\psi}-sin{\phi}sin{\psi})U_1-K_{fY}\dot{y}]/m \\ \ddot{z}=[(cos{\phi}cos{\theta}U_1-K_{fZ}\dot{z}-mg]/m\\ \ddot{\phi} = [U_2+(I_y-I_z)\dot{\theta}\dot{\psi}-K_{ {\tau}X }\dot{\phi}]/I_x \\  \ddot{\theta} = [U_3+(I_z-I_x)\dot{\phi}\dot{\psi}-K_{ {\tau}Y }\dot{\theta}]/I_y \\  \ddot{\psi} = [U_4+(I_x-I_y)\dot{\phi}\dot{\theta}-K_{ {\tau}Z }\dot{\psi}]/I_z \end{cases} $ 
+
+
+
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>[1] 孟佳东,赵志刚.小型四旋翼无人机建模与控制仿真[J].兰州交通大学学报,2013,32(1):63-67.</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -264,7 +768,7 @@
 <h4 id="3-2-2-加速计算与驱动层（CUDA-X-Libraries）"><a href="#3-2-2-加速计算与驱动层（CUDA-X-Libraries）" class="headerlink" title="3.2.2. 加速计算与驱动层（CUDA-X &amp; Libraries）"></a>3.2.2. 加速计算与驱动层（CUDA-X &amp; Libraries）</h4><ul>
 <li><strong>理论核心</strong>：<ul>
 <li><strong>CUDA &#x2F; cuDNN</strong>：让开发者能够直接调度 Ampere 架构 GPU 内部的数千个并行核心和 Tensor Cores。</li>
-<li>**VPI (Vision Programming Interface)**：专为传统计算机视觉算法（如几何变换、滤波、光流）设计的硬件加速库，将任务分流给 PVA（可编程视觉加速器）处理。</li>
+<li><strong>VPI (Vision Programming Interface)</strong>：专为传统计算机视觉算法（如几何变换、滤波、光流）设计的硬件加速库，将任务分流给 PVA（可编程视觉加速器）处理。</li>
 </ul>
 </li>
 <li><strong>工程作用</strong>：实现软硬件的极致解耦。算法工程师无需编写复杂的底层汇编或直接操作寄存器，只需调用标准 API 即可榨干硬件算力。</li>
@@ -773,14 +1277,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
@@ -868,6 +1372,61 @@
 
 
   
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
 
   
 
